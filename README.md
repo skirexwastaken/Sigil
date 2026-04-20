@@ -5,6 +5,8 @@ The main point of this project is that the entire game logic is written inside o
 
 To Do List
 
+Implement actual combat system with weapons and armor.
+
 Fill the map with more quests.
 
 Remove hard coded combat.
