@@ -1,10 +1,12 @@
-(lambda os, random:(
+with __import__("contextlib").suppress(KeyboardInterrupt): (lambda os, random, sys:(
+    sys.setrecursionlimit(2000),
+
     ( # --- World map and its layers ---
         worldMap := [
             ["🌳","🌳","🌳","🌳","🌳","🌳","🌳","🌳","🌳","🌳","🌳"],
             ["🌳","⬛","⬛","⬛","🌳","⬛","⬛","⬛","⬛","⬛","🌳"],
             ["🌳","⬛","🌳","⬛","🌳","⬛","🌳","🌳","⬛","⬛","🌳"],
-            ["🌳","⬛","🌳","⬛","⬛","⬛","⬛","🌳","⬛","🌳","🌳"],
+            ["🌳","✨","🌳","⬛","⬛","⬛","⬛","🌳","⬛","🌳","🌳"],
             ["🌳","🌳","🌳","🌳","🌳","🌳","⬛","🌳","⬛","⬛","🌳"],
             ["🌳","⛲","🌵","🦉","⬛","🌳","⬛","🌳","🌳","⬛","🌳"],
             ["🌳","🌳","🌳","⬛","⬛","🌳","⬛","⬛","🌳","⬛","🌳"],
@@ -13,35 +15,13 @@
             ["🌳","⬛","⛄","⬛","🌳","🌳","⬛","🌳","⬛","⬛","🌳"],
             ["🌳","🌳","🌳","🌳","🌳","🌳","🌳","🌳","🌳","🌳","🌳"],
             ],
-        boxLayer := [
-            ["","","","","","","","","","",""],
-            ["","","","","","","","","","",""],
-            ["","","","","","","","","","",""],
-            ["","","","","","","","","","",""],
-            ["","","","","","","","","","",""],
-            ["","","","","","","","","","",""],
-            ["","","","","","","","","","",""],
-            ["","Ancient Book","","","","","","","","",""],
-            ["","","","","","","","","","",""],
-            ["","","","","","","","","","",""],
-            ["","","","","","","","","","",""],
-        ],
     ),
 
-    (# --- User data -> 0 alpha, 1 beta, 2 inventory, 3 health, 4 maxHealth, 5 console ---
-        user := [5,4,[], 5, 5, " ... "],
-        userPointers := {
-            "alpha":0,
-            "beta":1,
-            "inventory":2,
-            "health":3,
-            "maxHealth":4,
-            "console":5
-        }
-    ),
-    
+    # --- User data -> 0 alpha, 1 beta, 2 inventory, 3 health, 4 maxHealth, 5 console ---
+    user := [5,4,[], 5, 5, " ... "],
+
     ( # --- Fighting mechanic ---
-        fightMechanic := lambda user, userPointers, worldMap, boxLayer, enemyHealth, enemyIcon, roundResult :(
+        fightMechanic := lambda user, worldMap, enemyHealth, enemyIcon, roundResult :(
             os.system('cls' if os.name == 'nt' else 'clear'),
 
             ( # --- Combat render ---
@@ -52,7 +32,7 @@
             userControl := input("[Rock/Paper/Scissors]: "),
 
             # --- If user input is invalid -> new input is taken ---    
-            fightMechanic(user,userPointers, worldMap, boxLayer, enemyHealth, enemyIcon, roundResult) if userControl not in ["Rock","Paper","Scissors"] else None,
+            fightMechanic(user, worldMap, enemyHealth, enemyIcon, roundResult) if userControl not in ["Rock","Paper","Scissors"] else None,
 
             ( # --- Part that runs one fight round ---
                 
@@ -77,7 +57,7 @@
                     print(f"You won the fight!"),
                     input("Press Enter to continue ..."),
                     os.system('cls' if os.name == 'nt' else 'clear'),
-                ) if enemyHealth == 0 else fightMechanic(user,userPointers, worldMap, boxLayer, enemyHealth, enemyIcon, roundResult)         
+                ) if enemyHealth == 0 else fightMechanic(user, worldMap, enemyHealth, enemyIcon, roundResult)         
             ),
         ),
     ),
@@ -91,7 +71,7 @@
     ),
 
     # --- Main Loop ---
-    (main := lambda user,userPointers, worldMap, boxLayer:(
+    (main := lambda user, worldMap:(
         ( # --- Render Script ---
             os.system('cls' if os.name == 'nt' else 'clear'),
             print(
@@ -131,8 +111,10 @@
                 
                 # --- Owl Pickaxe Quest ---
                 "To continue further, you will need to mine that rock. Here are some resources you will need to craft a pickaxe. You can do so by Craft Pickaxe."
-                if worldMap[user[0]][user[1]] == "🦉" and user[3] == user[4] and worldMap[9][2] == "⬛" and characterControl == "Talk" and "Pickaxe" not in user[userPointers["inventory"]] else
+                if worldMap[user[0]][user[1]] == "🦉" and user[3] == user[4] and worldMap[9][2] == "⬛" and characterControl == "Talk" and "Pickaxe" not in user[2] else
 
+                "Now that you have the pickaxe you can mine the rock by standing next to it using Mine."
+                if worldMap[user[0]][user[1]] == "🦉" and "Pickaxe" in user[2] else
 
                 # --- Default console message ---
                 " ... ",
@@ -148,37 +130,46 @@
             ( # --- Owl Pickaxe Quest ---
                 user[2].append("Rock"),
                 user[2].append("Stick")
-            ) if worldMap[user[0]][user[1]] == "🦉" and user[3] == user[4] and worldMap[9][2] == "⬛" and characterControl == "Talk" and "Pickaxe" not in user[userPointers["inventory"]] and "Rock" not in user[userPointers["inventory"]] and worldMap[7][1] != "📦"  and worldMap[5][2] != "🌵" else None
+            ) if worldMap[user[0]][user[1]] == "🦉" and user[3] == user[4] and worldMap[9][2] == "⬛" and characterControl == "Talk" and "Pickaxe" not in user[2] and "Rock" not in user[2] and worldMap[7][1] != "📦"  and worldMap[5][2] != "🌵" else None
         ),
 
         ( # --- Opening box feature ---
             worldMap[user[0]].__setitem__(user[1], "⬛"), # <- Removing box from map
-            user[2].append(boxLayer[user[0]][user[1]]) # <- Adding box content to inventory
+            user[2].append("Ancient Book") # <- Adding box content to inventory
         ) if characterControl == "Open" and worldMap[user[0]][user[1]] == "📦" else None,
         
         ( # --- Healing ---
             user.__setitem__(3, user[4]), # <- Healing player to max health
             user.__setitem__(5, "You have full health again!"), 
-        ) if [user[0], user[1]] == [5,1] and characterControl == "Drink" else user[3],
+        ) if [user[0], user[1]] == [5,1] and characterControl == "Drink" else None,
 
         ( # --- Crafting Mechanic ---
-            (
-                user[2].remove("Rock"),
-                user[2].remove("Stick"),
-                user[2].append("Pickaxe"),
-                user.__setitem__(5,"You crafted a pickaxe.")
+            user[2].remove("Rock"),
+            user[2].remove("Stick"),
+            user[2].append("Pickaxe"),
+            user.__setitem__(5,"You crafted a pickaxe.")
+        ) if characterControl == "Craft Pickaxe" and "Rock" in user[2] and "Stick" in user[2] else None,
 
-            ) if characterControl == "Craft Pickaxe" and "Rock" in user[2] and "Stick" in user[2] else None
-        ),
+        ( # --- Mining feature ---
+            user[2].remove("Pickaxe"),
+            worldMap[8].__setitem__(5, "⬛")
+        ) if characterControl == "Mine" and "Pickaxe" in user[2] and [user[0],user[1]] == [8,4] else None,
 
         # --- Fighting Command ---
-        fightMechanic(user,userPointers, worldMap, boxLayer, 1, "⛄", None) if [user[0], user[1]] == [9,3] and characterControl == "Fight" else None, 
+        fightMechanic(user, worldMap,  1, "⛄", None) if [user[0], user[1]] == [9,3] and characterControl == "Fight" else None, 
         
         ( # --- Exit Mechanic ---
             os.system('cls' if os.name == 'nt' else 'clear'),
             exit()
         ) if characterControl == "Exit" else None,
+
+        ( # --- Victory Mechanic ---
+            os.system('cls' if os.name == 'nt' else 'clear'),
+            print("You Won!"),
+            input("Press enter to exit ..."),
+            exit()
+        ) if [user[0], user[1]] == [3,1] else None,
             
-        main(user,userPointers, worldMap, boxLayer),
-    ))(user,userPointers,worldMap,boxLayer)
-))(__import__("os"),__import__("random")) # TDL: Add mining quest and the feature itself, enemy layer, merge all layers into one list like user
+        main(user, worldMap),
+    ))(user, worldMap)
+))(__import__("os"), __import__("random"), __import__("sys"))
